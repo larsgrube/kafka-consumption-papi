@@ -1,0 +1,14 @@
+[
+  {
+    "partition": 0,
+    "offset": 123654
+  },
+  {
+    "partition": 1,
+    "offset": 76534
+  },
+  {
+    "partition": 2,
+    "offset": 6823
+  }
+]
