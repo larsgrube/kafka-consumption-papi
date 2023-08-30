@@ -2,9 +2,23 @@
 title: kafka-consumption-papi
 
 types:
+  orders: !include types/orders.raml
   seek: !include types/seek.raml
 
 /orders:
+  /publish:
+    put:
+      displayName: Publish order data to Kafka topic
+      body:
+        application/json:
+          type: orders
+          example: !include examples/orders.json
+      responses:
+        202:
+          body:
+            application/json:
+              examples:
+                message: Order request accepted.
   /seek:
     post:
       displayName: Set offset of one or more topic partitions

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+	<sub-flow name="publish-orders" doc:id="301ba35e-9bd9-4ea5-b641-f98205c78621" >
+		<parallel-foreach doc:name="Parallel For Each" doc:id="803cde2a-6629-4fc4-948a-26adbea6dae2" >
+			<set-variable value="#[payload.orderId]" doc:name="Set Variable" doc:id="e4d53384-495b-4650-90d4-9e2d05bfef46" variableName="topicKey"/>
+			<ee:transform doc:name="Transform Message" doc:id="343e2281-5d94-4438-b474-409f0caeb596">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/avro schemaUrl='classpath://orders.avsc'
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<kafka:publish doc:name="Publish" doc:id="aebb1e86-2c05-4ab4-9737-7437463e88fd" config-ref="Apache_Kafka_Producer_configuration" topic="${kafka.topic}" key="#[vars.topicKey]"/>
+		</parallel-foreach>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Order request accepted."]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+	</sub-flow>
+</mule>

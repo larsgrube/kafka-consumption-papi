@@ -1,0 +1,8 @@
+%dw 2.0
+
+type auto_301ba35e_9bd9_4ea5_b641_f98205c78621_Input_Payload = Array<{  orderId: String,   orderUpdatedTS?: String | Null,   orderCreatedTS: String,   positions: Array<{    itemId: Number,     quantity: Number,     positionId: Number,     _?: Any  }>, 
+  customerEMailAddress: String, 
+  orderState: "Delivered" | "Preparation for Shipment" | "In Progress" | "Shipped", 
+  _?: Any
+}>
+

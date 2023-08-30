@@ -1,0 +1,34 @@
+#%RAML 1.0 DataType
+type: array
+items:
+  properties:
+    orderId:
+      type: string
+      maxLength: 14
+    orderCreatedTS: datetime
+    customerEMailAddress:
+      type: string
+      maxLength: 70
+    positions:
+      type: array
+      items:
+        properties:
+          positionId:
+            type: integer
+            minimum: 1
+            maximum: 65535
+          itemId:
+            type: integer
+            maximum: 2147483647
+          quantity:
+            type: integer
+            minimum: 1
+            maximum: 65535
+    orderState:
+      enum:
+        - "In Progress"
+        - "Preparation for Shipment"
+        - "Shipped"
+        - "Delivered"
+    orderUpdatedTS?: datetime | nil
+          

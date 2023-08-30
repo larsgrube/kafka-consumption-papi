@@ -1,0 +1,51 @@
+{
+  "name": "order",
+  "type": "record",
+  "namespace": "com.acme.avro",
+  "fields": [
+    {
+      "name": "orderId",
+      "type": "string"
+    },
+    {
+      "name": "orderCreatedTS",
+      "type": "string"
+    },
+    {
+      "name": "customerEMailAddress",
+      "type": "string"
+    },
+    {
+      "name": "positions",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "positions_record",
+          "type": "record",
+          "fields": [
+            {
+              "name": "positionId",
+              "type": "int"
+            },
+            {
+              "name": "itemId",
+              "type": "int"
+            },
+            {
+              "name": "quantity",
+              "type": "int"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "orderState",
+      "type": "string"
+    },
+    {
+      "name": "orderUpdatedTS",
+      "type": ["string","null"]
+    }
+  ]
+}
