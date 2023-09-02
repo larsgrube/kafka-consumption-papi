@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi" xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
+http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd">
 	<sub-flow name="publish-orders" doc:id="301ba35e-9bd9-4ea5-b641-f98205c78621" >
 		<parallel-foreach doc:name="Parallel For Each" doc:id="803cde2a-6629-4fc4-948a-26adbea6dae2" >
 			<set-variable value="#[payload.orderId]" doc:name="Set Variable" doc:id="e4d53384-495b-4650-90d4-9e2d05bfef46" variableName="topicKey"/>
@@ -45,6 +46,8 @@ output application/json
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="ff1f077b-c63c-452d-a265-67b6d6d8e198" message="[#[vars.consumerCommitKey]] Batch payload size: #[sizeOf(vars.kafkaBatchPayload)]"/>
 		<remove-variable doc:name="Remove Variable" doc:id="1c5cdd19-44f0-4c52-b1ff-fe244f60cb7c" variableName="payloadValues"/>
+		<set-payload value="#[output application/json --- vars.kafkaBatchPayload.value]" doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
+		<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="75249a55-622a-4d21-9382-dae219486f30" config-ref="Kafka_consumption_sapi_Config"/>
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
 	</flow>

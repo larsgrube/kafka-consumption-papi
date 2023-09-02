@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
-	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+<mule xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi"
+	xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
+http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd">
     <apikit:config name="kafka-consumption-papi-config" api="kafka-consumption-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="35fb2b9b-3c5f-429c-ac8c-7a6df397f45f" >
 		<http:listener-connection host="0.0.0.0" port="8081" />
@@ -20,7 +21,7 @@ http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/ka
 		</kafka:producer-plaintext-connection>
 	</kafka:producer-config>
 	<kafka:consumer-config name="Apache_Kafka_Consumer_configuration" doc:name="Apache Kafka Consumer configuration" doc:id="b5beb891-1d45-4e8a-acc0-ce9b29185f95" ackMode="MANUAL" >
-		<kafka:consumer-plaintext-connection groupId="${kafka.consumerGroup}" maximumPollingIntervalTimeUnit="MINUTES" heartbeatInterval="10" fetchMinimumSize="600" fetchMinimumSizeUnit="KB" fetchMaximumWaitTimeout="1" fetchMaximumWaitTimeoutUnit="MINUTES" sessionTimeout="30" requestTimeout="2" requestTimeoutTimeUnit="MINUTES" maximumPollingInterval="10" autoOffsetReset="EARLIEST">
+		<kafka:consumer-plaintext-connection groupId="${kafka.consumerGroup}" maximumPollingIntervalTimeUnit="MINUTES" heartbeatInterval="10" fetchMinimumSize="600" fetchMinimumSizeUnit="KB" fetchMaximumWaitTimeout="1" fetchMaximumWaitTimeoutUnit="MINUTES" sessionTimeout="30" requestTimeout="2" requestTimeoutTimeUnit="MINUTES" maximumPollingInterval="10" autoOffsetReset="EARLIEST" retryBackoffTimeout="10" retryBackoffTimeoutTimeUnit="SECONDS">
 			<reconnection >
 				<reconnect-forever frequency="10000" />
 			</reconnection>
@@ -32,4 +33,5 @@ http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/ka
 			</kafka:topic-patterns>
 		</kafka:consumer-plaintext-connection>
 	</kafka:consumer-config>
+	<kafka-consumption-sapi:config name="Kafka_consumption_sapi_Config" doc:name="Kafka-consumption-sapi Config" doc:id="8a04e20b-080b-47f3-9f86-364a8f0e44f0" property_host="${sapi.host}" property_port="${sapi.port}" property_protocol="${sapi.protocol}" property_responseTimeout="${sapi.responseTimeOut}" property_basePath="/api/"/>
 </mule>
