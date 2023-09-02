@@ -10,7 +10,12 @@ http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.o
 	<sub-flow name="publish-orders" doc:id="301ba35e-9bd9-4ea5-b641-f98205c78621" >
 		<parallel-foreach doc:name="Parallel For Each" doc:id="803cde2a-6629-4fc4-948a-26adbea6dae2" >
 			<set-variable value="#[payload.orderId]" doc:name="Set Variable" doc:id="e4d53384-495b-4650-90d4-9e2d05bfef46" variableName="topicKey"/>
-			<ee:transform doc:name="Transform Message" doc:id="343e2281-5d94-4438-b474-409f0caeb596">
+			<choice doc:name="Choice" doc:id="8fb07067-f414-4ead-92b1-9f01349e0d16" >
+				<when expression="#[payload.orderCanceled]">
+					<set-payload value="#[null]" doc:name="Set Payload" doc:id="b1cb300c-0841-4fb3-8be2-d6690bad0218" />
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Transform Message" doc:id="343e2281-5d94-4438-b474-409f0caeb596">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/avro schemaUrl='classpath://orders.avsc'
@@ -18,6 +23,8 @@ output application/avro schemaUrl='classpath://orders.avsc'
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+				</otherwise>
+			</choice>
 			<kafka:publish doc:name="Publish" doc:id="aebb1e86-2c05-4ab4-9737-7437463e88fd" config-ref="Apache_Kafka_Producer_configuration" topic="${kafka.topic}" key="#[vars.topicKey]"/>
 		</parallel-foreach>
 		<ee:transform doc:name="Transform Message">
@@ -33,9 +40,16 @@ output application/json
 		<kafka:batch-message-listener doc:name="Batch message listener" doc:id="67d66035-15da-4d39-a646-2ed455f588a9" config-ref="Apache_Kafka_Consumer_configuration" parallelConsumersAmount="2"/>
 		<set-variable value="#[attributes.consumerCommitKey]" doc:name="Set Variable" doc:id="e1a89f31-2111-42ed-a783-f9a2cb367713" variableName="consumerCommitKey"/>
 		<logger level="INFO" doc:name="Logger" doc:id="0fa81224-2109-4aa8-b988-f95ee4a0ac68" message="[#[vars.consumerCommitKey]] Consumer commit key stored."/>
-		<parallel-foreach doc:name="Parallel For Each" doc:id="8ecea3dd-cc48-46fb-ab11-375c5027513e" collection="#[payload.*payload]" target="payloadValues">
-			<set-payload value="#[payload]" doc:name="Set Payload" doc:id="201c16b5-c125-48b7-8ca8-08d9c8ba7831" mimeType="application/avro"/>
-			<set-payload value='#[output application/json --- payload[0]]' doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1"/>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="8ecea3dd-cc48-46fb-ab11-375c5027513e" collection="#[payload.serByteArray.payload]" target="payloadValues">
+			<choice doc:name="Choice" doc:id="a617ab40-fb95-4c46-8bec-0d1c8d08f532" >
+				<when expression="#[isEmpty(payload)]">
+					<set-payload value="#[tombstoneMessage: true]" doc:name="Set Payload" doc:id="d1e638cd-b750-44bd-ab72-42ad55bb92f7" />
+				</when>
+				<otherwise >
+					<set-payload value="#[payload]" doc:name="Set Payload" doc:id="201c16b5-c125-48b7-8ca8-08d9c8ba7831" mimeType="application/avro" />
+					<set-payload value="#[output application/json --- payload[0]]" doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1" />
+				</otherwise>
+			</choice>
 		</parallel-foreach>
 		<ee:transform doc:name="Transform Message" doc:id="f5a38744-f11f-4460-80c5-8012a765f4d6" >
 			<ee:message >
@@ -46,7 +60,19 @@ output application/json
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="ff1f077b-c63c-452d-a265-67b6d6d8e198" message="[#[vars.consumerCommitKey]] Batch payload size: #[sizeOf(vars.kafkaBatchPayload)]"/>
 		<remove-variable doc:name="Remove Variable" doc:id="1c5cdd19-44f0-4c52-b1ff-fe244f60cb7c" variableName="payloadValues"/>
-		<set-payload value="#[output application/json --- vars.kafkaBatchPayload.value]" doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
+		<ee:transform doc:name="Transform Message" doc:id="598e8c6a-c98d-40c3-a8e0-7621563ecdd3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.kafkaBatchPayload.value filter ($.tombstoneMessage default false) map (item) -> {
+	orderId: item.messageKey replace '"' with '',
+	orderCanceledTS: item.messagePublishedTS
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<kafka-consumption-sapi:delete-order-data doc:name="Delete order data" doc:id="b9c45d01-4260-439c-9d81-d7b13095d83b" config-ref="Kafka_consumption_sapi_Config"/>
+		<set-payload value="#[output application/json --- vars.kafkaBatchPayload.value filter not ($.tombstoneMessage default false)]" doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
 		<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="75249a55-622a-4d21-9382-dae219486f30" config-ref="Kafka_consumption_sapi_Config"/>
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
