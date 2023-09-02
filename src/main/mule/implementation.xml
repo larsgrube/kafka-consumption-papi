@@ -48,4 +48,17 @@ output application/json
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
 	</flow>
+	<sub-flow name="seek-orders" doc:id="c9b83d73-8cb0-474c-aaba-e43f73b4a54e" >
+		<foreach doc:name="For Each" doc:id="504620cf-a6d0-4517-bb29-172b0b894e44" >
+			<kafka:seek offset="#[payload.offset]" doc:name="Seek" doc:id="7e99d592-5097-432f-8884-31100713290f" config-ref="Apache_Kafka_Consumer_configuration" topic="${kafka.topic}" partition="#[payload.partition]"/>
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="ef4271e0-13cb-4732-b55a-a5fe8dd08898" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Seek request accepted."]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
 </mule>

@@ -120,14 +120,7 @@ output application/json
         </error-handler>
     </flow>
     <flow name="post:\orders\seek:application\json:kafka-consumption-papi-config">
-        <ee:transform doc:name="Transform Message">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-"Seek request accepted."]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="seek-orders" doc:id="33061f31-86b0-4d8f-ad98-764832170e00" name="seek-orders"/>
     </flow>
     <flow name="post:\orders\start:kafka-consumption-papi-config">
         <ee:transform doc:name="Transform Message">
