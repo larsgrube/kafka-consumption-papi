@@ -1,3 +1,4 @@
 kafka:
   bootstrapServer: "192.168.171.31:9092"
   topic: "orders"
+  consumerGroup: "kafka-consumption-sapi-consumer-group"

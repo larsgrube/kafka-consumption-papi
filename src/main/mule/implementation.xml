@@ -28,4 +28,24 @@ output application/json
             </ee:message>
         </ee:transform>
 	</sub-flow>
+	<flow name="consume-orders" doc:id="3fb25c3e-6fa3-4bbd-9b16-251cf64cdc28" initialState="started">
+		<kafka:batch-message-listener doc:name="Batch message listener" doc:id="67d66035-15da-4d39-a646-2ed455f588a9" config-ref="Apache_Kafka_Consumer_configuration" parallelConsumersAmount="2"/>
+		<set-variable value="#[attributes.consumerCommitKey]" doc:name="Set Variable" doc:id="e1a89f31-2111-42ed-a783-f9a2cb367713" variableName="consumerCommitKey"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0fa81224-2109-4aa8-b988-f95ee4a0ac68" message="[#[vars.consumerCommitKey]] Consumer commit key stored."/>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="8ecea3dd-cc48-46fb-ab11-375c5027513e" collection="#[payload.*payload]" target="payloadValues">
+			<set-payload value="#[payload]" doc:name="Set Payload" doc:id="201c16b5-c125-48b7-8ca8-08d9c8ba7831" mimeType="application/avro"/>
+			<set-payload value='#[output application/json --- payload[0]]' doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1"/>
+		</parallel-foreach>
+		<ee:transform doc:name="Transform Message" doc:id="f5a38744-f11f-4460-80c5-8012a765f4d6" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dw/zip-batch-payload-attributes-and-deserialization-results.dwl" variableName="kafkaBatchPayload" />
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ff1f077b-c63c-452d-a265-67b6d6d8e198" message="[#[vars.consumerCommitKey]] Batch payload size: #[sizeOf(vars.kafkaBatchPayload)]"/>
+		<remove-variable doc:name="Remove Variable" doc:id="1c5cdd19-44f0-4c52-b1ff-fe244f60cb7c" variableName="payloadValues"/>
+		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
+		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
+	</flow>
 </mule>

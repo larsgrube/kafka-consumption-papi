@@ -63,6 +63,10 @@
     "orderUpdatedTS": "2000-02-18T12:18:39.97Z"
   },
   {
+    "orderId": "703-647763027",
+    "orderCanceled": true
+  },
+  {
     "orderId": "755-188952204",
     "orderCreatedTS": "2008-10-15T17:38:15.209Z",
     "customerEMailAddress": "email73@domain11.com",
@@ -139,6 +143,10 @@
     ],
     "orderState": "In Progress",
     "orderUpdatedTS": null
+  },
+  {
+    "orderId": "145-962910562",
+    "orderCanceled": true
   },
   {
     "orderId": "926-769328795",
