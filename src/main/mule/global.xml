@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi"
-	xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+<mule xmlns:confluent-schema-registry="http://www.mulesoft.org/schema/mule/confluent-schema-registry" xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi"
+	xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
-http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd">
+http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd
+http://www.mulesoft.org/schema/mule/confluent-schema-registry http://www.mulesoft.org/schema/mule/confluent-schema-registry/current/mule-confluent-schema-registry.xsd">
     <apikit:config name="kafka-consumption-papi-config" api="kafka-consumption-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="35fb2b9b-3c5f-429c-ac8c-7a6df397f45f" >
-		<http:listener-connection host="0.0.0.0" port="8081" />
+		<http:listener-connection host="0.0.0.0" port="8084" />
 	</http:listener-config>
 	<configuration-properties doc:name="Configuration properties" doc:id="88b086f3-a333-4a81-ab70-b8356e17f911" file="properties.yaml" />
 	<kafka:producer-config name="Apache_Kafka_Producer_configuration" doc:name="Apache Kafka Producer configuration" doc:id="f7ed7a6a-3194-415c-984f-02d2ba79f14b" >
@@ -34,4 +34,7 @@ http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.o
 		</kafka:consumer-plaintext-connection>
 	</kafka:consumer-config>
 	<kafka-consumption-sapi:config name="Kafka_consumption_sapi_Config" doc:name="Kafka-consumption-sapi Config" doc:id="8a04e20b-080b-47f3-9f86-364a8f0e44f0" property_host="${sapi.host}" property_port="${sapi.port}" property_protocol="${sapi.protocol}" property_responseTimeout="${sapi.responseTimeOut}" property_basePath="/api/"/>
+	<confluent-schema-registry:config name="Confluent_Schema_Registry_Connector_Config" doc:name="Confluent Schema Registry Connector Config" doc:id="0c2b7a47-9fd8-4a89-954d-1d94e4c736de" >
+		<confluent-schema-registry:unsecured-connection baseUri="${kafka.schemaRegistryUrl}" />
+	</confluent-schema-registry:config>
 </mule>

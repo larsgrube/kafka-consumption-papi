@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi" xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
-	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:confluent-schema-registry="http://www.mulesoft.org/schema/mule/confluent-schema-registry" xmlns:kafka-consumption-sapi="http://www.mulesoft.org/schema/mule/kafka-consumption-sapi"
+	xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
-http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd">
+http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd
+http://www.mulesoft.org/schema/mule/confluent-schema-registry http://www.mulesoft.org/schema/mule/confluent-schema-registry/current/mule-confluent-schema-registry.xsd">
 	<sub-flow name="publish-orders" doc:id="301ba35e-9bd9-4ea5-b641-f98205c78621" >
 		<parallel-foreach doc:name="Parallel For Each" doc:id="803cde2a-6629-4fc4-948a-26adbea6dae2" >
 			<set-variable value="#[payload.orderId]" doc:name="Set Variable" doc:id="e4d53384-495b-4650-90d4-9e2d05bfef46" variableName="topicKey"/>
@@ -23,6 +24,7 @@ output application/avro schemaUrl='classpath://orders.avsc'
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+					<confluent-schema-registry:replace-avro-schema-with-id doc:name="Replace AVRO schema with id" doc:id="18cdd6c3-bcfb-4229-b10d-57d2fb91b060" config-ref="Confluent_Schema_Registry_Connector_Config" schemaId="1" subject="#[vars.topicKey]" />
 				</otherwise>
 			</choice>
 			<kafka:publish doc:name="Publish" doc:id="aebb1e86-2c05-4ab4-9737-7437463e88fd" config-ref="Apache_Kafka_Producer_configuration" topic="${kafka.topic}" key="#[vars.topicKey]"/>
@@ -46,7 +48,7 @@ output application/json
 					<set-payload value="#[tombstoneMessage: true]" doc:name="Set Payload" doc:id="d1e638cd-b750-44bd-ab72-42ad55bb92f7" />
 				</when>
 				<otherwise >
-					<set-payload value="#[payload]" doc:name="Set Payload" doc:id="201c16b5-c125-48b7-8ca8-08d9c8ba7831" mimeType="application/avro" />
+					<confluent-schema-registry:replace-id-with-avro-schema doc:name="Replace id with AVRO schema" doc:id="089e6ead-ecd1-433e-afd4-2178700f9ca8" config-ref="Confluent_Schema_Registry_Connector_Config"/>
 					<set-payload value="#[output application/json --- payload[0]]" doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1" />
 				</otherwise>
 			</choice>

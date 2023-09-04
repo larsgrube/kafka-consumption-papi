@@ -1,9 +1,10 @@
 kafka:
-  bootstrapServer: "192.168.171.31:9092"
+  bootstrapServer: "localhost:9092"
   topic: "orders"
   consumerGroup: "kafka-consumption-sapi-consumer-group"
+  schemaRegistryUrl: "http://localhost:8081"
 sapi:
   host: "localhost"
-  port: "8082"
+  port: "8085"
   protocol: "HTTP"
   responseTimeOut: "20000"
