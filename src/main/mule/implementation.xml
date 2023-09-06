@@ -48,8 +48,18 @@ output application/json
 					<set-payload value="#[tombstoneMessage: true]" doc:name="Set Payload" doc:id="d1e638cd-b750-44bd-ab72-42ad55bb92f7" />
 				</when>
 				<otherwise >
-					<confluent-schema-registry:replace-id-with-avro-schema doc:name="Replace id with AVRO schema" doc:id="089e6ead-ecd1-433e-afd4-2178700f9ca8" config-ref="Confluent_Schema_Registry_Connector_Config"/>
-					<set-payload value="#[output application/json --- payload[0]]" doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1" />
+					<try doc:name="Try" doc:id="4e876c63-e46f-4f71-a866-bdf50d73098f">
+						<confluent-schema-registry:replace-id-with-avro-schema doc:name="Replace id with AVRO schema" doc:id="089e6ead-ecd1-433e-afd4-2178700f9ca8" config-ref="Confluent_Schema_Registry_Connector_Config" />
+						<set-payload value="#[output application/json --- payload[0]]" doc:name="Set Payload" doc:id="da45124b-9608-49ad-8b56-d653268f15c1" />
+						<error-handler >
+							<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7cbe809f-5c5f-4bb4-9775-16c438286cd9" when='#[["CONFLUENT-SCHEMA-REGISTRY:CONNECTIVITY", "CONFLUENT-SCHEMA-REGISTRY:TIMEOUT"] contains error.errorType.asString]'>
+								<logger level="INFO" doc:name="Logger" doc:id="3aa34143-72a9-4a3d-8e44-b2cf1dca02b7" message="[#[vars.consumerCommitKey]] Deserialization failed due to irreproducible error, propagating error to parent flow."/>
+							</on-error-propagate>
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="56552361-22df-418f-a42d-a6b02171d28b" type="ANY">
+								<set-payload value="#[failedDeserialization: error.description]" doc:name="Set Payload" doc:id="a36861a5-40e5-491c-962d-ed9339d66a1d" />
+							</on-error-continue>
+						</error-handler>
+					</try>
 				</otherwise>
 			</choice>
 		</parallel-foreach>
@@ -62,20 +72,41 @@ output application/json
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="ff1f077b-c63c-452d-a265-67b6d6d8e198" message="[#[vars.consumerCommitKey]] Batch payload size: #[sizeOf(vars.kafkaBatchPayload)]"/>
 		<remove-variable doc:name="Remove Variable" doc:id="1c5cdd19-44f0-4c52-b1ff-fe244f60cb7c" variableName="payloadValues"/>
-		<ee:transform doc:name="Transform Message" doc:id="598e8c6a-c98d-40c3-a8e0-7621563ecdd3" >
+		<ee:transform doc:name="Transform Message" doc:id="0808aa5f-b91c-475e-b39a-f0c34a1bb1d9" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-vars.kafkaBatchPayload.value filter ($.tombstoneMessage default false) map (item) -> {
-	orderId: item.messageKey replace '"' with '',
-	orderCanceledTS: item.messagePublishedTS
-}]]></ee:set-payload>
+				<ee:set-payload resource="dw/prepare-failed-deserializations-for-logging.dwl" />
 			</ee:message>
 		</ee:transform>
-		<kafka-consumption-sapi:delete-order-data doc:name="Delete order data" doc:id="b9c45d01-4260-439c-9d81-d7b13095d83b" config-ref="Kafka_consumption_sapi_Config"/>
-		<set-payload value="#[output application/json --- vars.kafkaBatchPayload.value filter not ($.tombstoneMessage default false)]" doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
-		<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="75249a55-622a-4d21-9382-dae219486f30" config-ref="Kafka_consumption_sapi_Config"/>
+		<choice doc:name="Choice" doc:id="bdb8c932-dc0e-4c13-8eb9-cb388638f185" >
+			<when expression="#[not (isEmpty(payload))]">
+				<kafka-consumption-sapi:log-failed-messages doc:name="Log failed messages" doc:id="5eff1200-4166-45f2-93fb-8a23c8d2cade" config-ref="Kafka_consumption_sapi_Config" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="dc583a0e-3203-4771-8f31-a45b5170d231" message="[#[vars.consumerCommitKey]] No failed deserialization data found, continuing batch processing."/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="598e8c6a-c98d-40c3-a8e0-7621563ecdd3" >
+			<ee:message >
+				<ee:set-payload resource="dw/prepare-tombstone-messages-for-order-deletion.dwl" />
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="3bd3f991-d009-4756-851c-995f953c6cc4">
+			<when expression="#[not (isEmpty(payload))]">
+				<kafka-consumption-sapi:delete-order-data doc:name="Delete order data" doc:id="b9c45d01-4260-439c-9d81-d7b13095d83b" config-ref="Kafka_consumption_sapi_Config" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1e35e171-a983-4648-8dc2-22281bac362f" message="[#[vars.consumerCommitKey]] No tombstone messages found, continuing batch processing."/>
+			</otherwise>
+		</choice>
+		<set-payload value='#[output application/json --- vars.kafkaBatchPayload.value filter (not ($.tombstoneMessage default false)) and $.failedDeserialization is Null]' doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
+		<choice doc:name="Choice" doc:id="bceed6fe-993b-45d6-afb8-c91fc4d4e762" >
+			<when expression="#[not (isEmpty(payload))]">
+				<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="75249a55-622a-4d21-9382-dae219486f30" config-ref="Kafka_consumption_sapi_Config" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="b3fa3c28-9db2-4a6b-9a5c-fced0d2e3831" message="[#[vars.consumerCommitKey]] No regular message data found, continuing batch processing."/>
+			</otherwise>
+		</choice>
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
 	</flow>
