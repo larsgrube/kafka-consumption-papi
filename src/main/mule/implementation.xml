@@ -8,6 +8,20 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
 http://www.mulesoft.org/schema/mule/kafka-consumption-sapi http://www.mulesoft.org/schema/mule/kafka-consumption-sapi/current/mule-kafka-consumption-sapi.xsd
 http://www.mulesoft.org/schema/mule/confluent-schema-registry http://www.mulesoft.org/schema/mule/confluent-schema-registry/current/mule-confluent-schema-registry.xsd">
+	<sub-flow name="call-consumption-sapi" doc:id="1d058ee3-9c99-472a-963b-7098f681581c" >
+		<try doc:name="Try" doc:id="0464e303-9550-4c81-9267-b9a4a5dac657">
+				<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="f101b381-a8ae-4e1a-acd6-7aea7e6838b3" config-ref="Kafka_consumption_sapi_Config" />
+				<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e30fd111-42fd-4fd2-b825-68e746e4e69f" when='#[(error.errorType.asString == "KAFKA-CONSUMPTION-SAPI:SERVICE_UNAVAILABLE") or (["CONNECTIVITY", "TIMEOUT"] contains error.errorType.identifier)]'>
+					<logger level="INFO" doc:name="Logger" doc:id="4c1b57e7-a8c5-4c6c-ab6a-a0625ef0b07e" message="[#[vars.consumerCommitKey]] Sapi call failed due to irreproducible error, propagating error to parent flow."/>
+				</on-error-propagate>
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="aae1209f-2dc4-418b-bc39-0080384836f1" type="ANY">
+						<set-variable value="#[true]" doc:name="sapiCallFailed = true" doc:id="1ddeacb5-98e6-4d8d-bb77-058213a95939" variableName="sapiCallFailed" />
+						<set-variable value="#[error.muleMessage.typedValue.message default error.description]" doc:name="errorMessage" doc:id="e82832b8-b93b-4f8a-bd02-77ef35993b72" variableName="errorMessage" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+	</sub-flow>
 	<sub-flow name="publish-orders" doc:id="301ba35e-9bd9-4ea5-b641-f98205c78621" >
 		<parallel-foreach doc:name="Parallel For Each" doc:id="803cde2a-6629-4fc4-948a-26adbea6dae2" >
 			<set-variable value="#[payload.orderId]" doc:name="Set Variable" doc:id="e4d53384-495b-4650-90d4-9e2d05bfef46" variableName="topicKey"/>
@@ -101,7 +115,15 @@ output application/json
 		<set-payload value='#[output application/json --- vars.kafkaBatchPayload.value filter (not ($.tombstoneMessage default false)) and $.failedDeserialization is Null]' doc:name="Set Payload" doc:id="256fd661-ef86-43ca-8e6e-1361e44c9041" />
 		<choice doc:name="Choice" doc:id="bceed6fe-993b-45d6-afb8-c91fc4d4e762" >
 			<when expression="#[not (isEmpty(payload))]">
-				<kafka-consumption-sapi:create-or-update-order-data doc:name="Create or update order data" doc:id="75249a55-622a-4d21-9382-dae219486f30" config-ref="Kafka_consumption_sapi_Config" />
+				<flow-ref doc:name="call-consumption-sapi" doc:id="abf72a20-5376-49f3-ada5-d70df4899b4d" name="call-consumption-sapi"/>
+				<choice doc:name="Choice" doc:id="481421bf-d739-463c-b911-80478bc6365d" >
+					<when expression="#[vars.sapiCallFailed]">
+						<flow-ref doc:name="consume-orders-separately" doc:id="b964034d-6bcd-4c64-b6c7-94987c85ef5f" name="consume-orders-separately"/>
+					</when>
+					<otherwise >
+						<logger level="INFO" doc:name="Logger" doc:id="0e465d58-d7a7-4ec9-b23b-53e8394923d3" message="[#[vars.consumerCommitKey]] Sapi call successful."/>
+					</otherwise>
+				</choice>
 			</when>
 			<otherwise >
 				<logger level="INFO" doc:name="Logger" doc:id="b3fa3c28-9db2-4a6b-9a5c-fced0d2e3831" message="[#[vars.consumerCommitKey]] No regular message data found, continuing batch processing."/>
@@ -110,6 +132,40 @@ output application/json
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
 	</flow>
+	<sub-flow name="consume-orders-separately" doc:id="74d319ad-bf5f-4565-9134-f03b13a75b6f" >
+		<set-payload value="#[output application/json --- vars.kafkaBatchPayload filter (not ($.value.tombstoneMessage default false)) and $.value.failedDeserialization is Null]" doc:name="Set Payload" doc:id="a6d34a83-8304-4e06-b17f-f5c60c967257" />
+		<set-variable value="#[false]" doc:name="sapiCallFailed = false" doc:id="20ff3cc4-e746-49df-9930-1442635de344" variableName="sapiCallFailed"/>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="93278428-66ab-4109-a9f7-b08769074ad6" >
+			<set-variable value="#[payload.attributes]" doc:name="Set Variable" doc:id="88442fe1-dec7-4234-ac2f-7201de7c42e4" variableName="messageAttributes" />
+			<set-payload value="#[[payload.value]]" doc:name="Set Payload" doc:id="64deabac-a072-4acf-a428-294542df6101" />
+			<flow-ref doc:name="call-consumption-sapi" doc:id="e51bac3f-c8a8-40ed-93f5-a209bb3da0b0" name="call-consumption-sapi" />
+			<choice doc:name="Choice" doc:id="738bba82-d674-41d8-994a-c6464982249a" >
+				<when expression="#[vars.sapiCallFailed]">
+					<ee:transform doc:name="Transform Message" doc:id="a67ea5b6-106f-40e9-8c72-78d93779327a">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+	{
+		topicName: p('kafka.topic'),
+		messageKey: vars.messageAttributes.key replace '"' with '',
+		messagePublishedTS: vars.messageAttributes.creationTimestamp,
+		topicPartition: vars.messageAttributes.partition,
+		topicPartitionOffset: vars.messageAttributes.offset,
+		errorMessage: vars.errorMessage
+	}
+]]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<kafka-consumption-sapi:log-failed-messages doc:name="Log failed messages" doc:id="a02ec1cd-94c0-440b-a893-e187ac7a36ac" config-ref="Kafka_consumption_sapi_Config"/>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="88462157-dab6-47c0-a511-1b8eb3f1a4bd" message="[#[vars.consumerCommitKey]] Single message successfully processed."/>
+				</otherwise>
+			</choice>
+		</parallel-foreach>
+	</sub-flow>
 	<sub-flow name="seek-orders" doc:id="c9b83d73-8cb0-474c-aaba-e43f73b4a54e" >
 		<foreach doc:name="For Each" doc:id="504620cf-a6d0-4517-bb29-172b0b894e44" >
 			<kafka:seek offset="#[payload.offset]" doc:name="Seek" doc:id="7e99d592-5097-432f-8884-31100713290f" config-ref="Apache_Kafka_Consumer_configuration" topic="${kafka.topic}" partition="#[payload.partition]"/>

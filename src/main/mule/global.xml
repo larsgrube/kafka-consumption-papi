@@ -21,7 +21,7 @@ http://www.mulesoft.org/schema/mule/confluent-schema-registry http://www.mulesof
 		</kafka:producer-plaintext-connection>
 	</kafka:producer-config>
 	<kafka:consumer-config name="Apache_Kafka_Consumer_configuration" doc:name="Apache Kafka Consumer configuration" doc:id="b5beb891-1d45-4e8a-acc0-ce9b29185f95" ackMode="MANUAL" >
-		<kafka:consumer-plaintext-connection groupId="${kafka.consumerGroup}" maximumPollingIntervalTimeUnit="MINUTES" heartbeatInterval="10" fetchMinimumSize="600" fetchMinimumSizeUnit="KB" fetchMaximumWaitTimeout="1" fetchMaximumWaitTimeoutUnit="MINUTES" sessionTimeout="30" requestTimeout="2" requestTimeoutTimeUnit="MINUTES" maximumPollingInterval="10" autoOffsetReset="EARLIEST" retryBackoffTimeout="10" retryBackoffTimeoutTimeUnit="SECONDS">
+		<kafka:consumer-plaintext-connection groupId="${kafka.consumerGroup}" maximumPollingIntervalTimeUnit="MINUTES" heartbeatInterval="10" fetchMinimumSize="600" fetchMinimumSizeUnit="KB" fetchMaximumWaitTimeout="10" fetchMaximumWaitTimeoutUnit="SECONDS" sessionTimeout="30" requestTimeout="2" requestTimeoutTimeUnit="MINUTES" maximumPollingInterval="10" autoOffsetReset="EARLIEST" retryBackoffTimeout="15" retryBackoffTimeoutTimeUnit="SECONDS">
 			<reconnection >
 				<reconnect-forever frequency="10000" />
 			</reconnection>
