@@ -29,6 +29,14 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
+				<configuration>
+					<sharedLibraries>
+						<sharedLibrary>
+							<groupId>org.codehaus.groovy</groupId>
+							<artifactId>groovy-all</artifactId>
+						</sharedLibrary>
+					</sharedLibraries>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -59,12 +67,6 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>5f2f2b92-3d14-4581-98f1-8f666f8d6f6a</groupId>
-			<artifactId>mule-plugin-kafka-consumption-sapi</artifactId>
-			<version>1.2.3</version>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
 			<groupId>org.mule.connectors</groupId>
 			<artifactId>mule-objectstore-connector</artifactId>
 			<version>1.2.1</version>
@@ -74,6 +76,24 @@
 			<groupId>com.mulesoft.connectors</groupId>
 			<artifactId>mule4-confluent-schema-registry-connector</artifactId>
 			<version>1.0.9</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-scripting-module</artifactId>
+			<version>2.0.3</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>2.4.21</version>
+			<classifier>indy</classifier>
+		</dependency>
+		<dependency>
+			<groupId>5f2f2b92-3d14-4581-98f1-8f666f8d6f6a</groupId>
+			<artifactId>mule-plugin-kafka-consumption-sapi</artifactId>
+			<version>1.2.4</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 	</dependencies>
