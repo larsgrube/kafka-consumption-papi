@@ -160,19 +160,7 @@ flow.stop()]]></scripting:code>
 				<when expression="#[vars.sapiCallFailed]">
 					<ee:transform doc:name="Transform Message" doc:id="a67ea5b6-106f-40e9-8c72-78d93779327a">
 						<ee:message>
-							<ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-[
-	{
-		topicName: p('kafka.topic'),
-		messageKey: vars.messageAttributes.key replace '"' with '',
-		messagePublishedTS: vars.messageAttributes.creationTimestamp,
-		topicPartition: vars.messageAttributes.partition,
-		topicPartitionOffset: vars.messageAttributes.offset,
-		errorMessage: vars.errorMessage
-	}
-]]]></ee:set-payload>
+							<ee:set-payload resource="dw/prepare-failed-sapi-call-for-logging.dwl" />
 						</ee:message>
 					</ee:transform>
 					<kafka-consumption-sapi:log-failed-messages doc:name="Log failed messages" doc:id="a02ec1cd-94c0-440b-a893-e187ac7a36ac" config-ref="Kafka_consumption_sapi_Config"/>
