@@ -137,6 +137,9 @@ output application/json
 			</otherwise>
 		</choice>
 		<logger level="INFO" doc:name="Logger" doc:id="404927cc-38f7-4831-8e2e-1d9eea928749" message="[#[vars.consumerCommitKey]] Committing consumption."/>
+		<kafka-consumption-sapi:log-correlation-id doc:name="Log correlation id" doc:id="f84f52b4-2033-442f-aba5-0dad98700735" config-ref="Kafka_consumption_sapi_Config" correlation-id="#[correlationId]">
+			<kafka-consumption-sapi:log-correlation-id-request-data ><![CDATA[#[topicName: p('kafka.topic')]]]></kafka-consumption-sapi:log-correlation-id-request-data>
+		</kafka-consumption-sapi:log-correlation-id>
 		<kafka:commit doc:name="Commit" doc:id="a2377337-31ad-4a73-a1b0-b5284f4bb152" config-ref="Apache_Kafka_Consumer_configuration" commitKey="#[vars.consumerCommitKey]"/>
 		<choice doc:name="Choice" doc:id="c5ef54ad-e5e9-4649-b102-b9654dd45835" >
 			<when expression="#[vars.criticalError]">
