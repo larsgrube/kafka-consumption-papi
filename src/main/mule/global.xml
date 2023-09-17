@@ -34,7 +34,8 @@ http://www.mulesoft.org/schema/mule/confluent-schema-registry http://www.mulesof
 		</kafka:consumer-plaintext-connection>
 	</kafka:consumer-config>
 	<kafka-consumption-sapi:config name="Kafka_consumption_sapi_Config" doc:name="Kafka-consumption-sapi Config" doc:id="8a04e20b-080b-47f3-9f86-364a8f0e44f0" property_host="${sapi.host}" property_port="${sapi.port}" property_protocol="${sapi.protocol}" property_responseTimeout="${sapi.responseTimeOut}" property_basePath="/api/"/>
-	<confluent-schema-registry:config name="Confluent_Schema_Registry_Connector_Config" doc:name="Confluent Schema Registry Connector Config" doc:id="0c2b7a47-9fd8-4a89-954d-1d94e4c736de" >
+	<import doc:name="Import" doc:id="a32107b7-a24b-4775-b522-f7f692281277" file="kafka-commons.xml" />
+	<confluent-schema-registry:config name="Confluent_Schema_Registry_Connector_Config" doc:name="Confluent Schema Registry Connector Config" doc:id="60deb089-329e-4e64-8ff3-6a8ec81ecfe5" >
 		<confluent-schema-registry:unsecured-connection baseUri="${kafka.schemaRegistryUrl}" />
 	</confluent-schema-registry:config>
 </mule>

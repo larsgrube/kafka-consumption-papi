@@ -4,7 +4,8 @@ kafka:
   consumerGroup: "kafka-consumption-sapi-consumer-group"
   schemaRegistryUrl: "http://localhost:8081"
   singleMessageConsumption:
-    maxConcurrency: "100"
+    maxConcurrency: "200"
+
 sapi:
   host: "localhost"
   port: "8085"

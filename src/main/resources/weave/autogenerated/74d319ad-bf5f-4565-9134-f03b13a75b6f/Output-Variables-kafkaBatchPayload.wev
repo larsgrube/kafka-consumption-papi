@@ -1,4 +1,0 @@
-%dw 2.0
-
-type auto_74d319ad_bf5f_4565_9134_f03b13a75b6f_Output_Variables_kafkaBatchPayload = Any
-
