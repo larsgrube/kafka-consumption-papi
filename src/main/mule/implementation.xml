@@ -124,6 +124,7 @@ output application/json
 				<flow-ref doc:name="call-consumption-sapi" doc:id="abf72a20-5376-49f3-ada5-d70df4899b4d" name="call-consumption-sapi"/>
 				<choice doc:name="Choice" doc:id="481421bf-d739-463c-b911-80478bc6365d" >
 					<when expression="#[vars.sapiCallFailed]">
+						<logger level="INFO" doc:name="Logger" doc:id="b62f5b08-67e5-481b-af05-5d5f1620d35e" message="[#[vars.consumerCommitKey]] Sapi call failed, starting single message consumption, max concurrency: #[if (isEmpty(p('kafka.singleMessageConsumption.maxConcurrency'))) &quot;No limitation&quot; else p('kafka.singleMessageConsumption.maxConcurrency')]"/>
 						<flow-ref doc:name="consume-orders-separately" doc:id="b964034d-6bcd-4c64-b6c7-94987c85ef5f" name="consume-orders-separately"/>
 					</when>
 					<otherwise >
@@ -152,7 +153,7 @@ flow.stop()]]></scripting:code>
 	<sub-flow name="consume-orders-separately" doc:id="74d319ad-bf5f-4565-9134-f03b13a75b6f" >
 		<set-payload value="#[output application/json --- vars.kafkaBatchPayload filter (not ($.value.tombstoneMessage default false)) and $.value.failedDeserialization is Null]" doc:name="Set Payload" doc:id="a6d34a83-8304-4e06-b17f-f5c60c967257" />
 		<set-variable value="#[false]" doc:name="sapiCallFailed = false" doc:id="20ff3cc4-e746-49df-9930-1442635de344" variableName="sapiCallFailed"/>
-		<parallel-foreach doc:name="Parallel For Each" doc:id="93278428-66ab-4109-a9f7-b08769074ad6" >
+		<parallel-foreach doc:name="Parallel For Each" doc:id="93278428-66ab-4109-a9f7-b08769074ad6" maxConcurrency="${kafka.singleMessageConsumption.maxConcurrency}">
 			<set-variable value="#[payload.attributes]" doc:name="Set Variable" doc:id="88442fe1-dec7-4234-ac2f-7201de7c42e4" variableName="messageAttributes" />
 			<set-payload value="#[[payload.value]]" doc:name="Set Payload" doc:id="64deabac-a072-4acf-a428-294542df6101" />
 			<flow-ref doc:name="call-consumption-sapi" doc:id="e51bac3f-c8a8-40ed-93f5-a209bb3da0b0" name="call-consumption-sapi" />
